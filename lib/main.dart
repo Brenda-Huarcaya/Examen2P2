@@ -1,141 +1,157 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(CalculatorApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class CalculatorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        scaffoldBackgroundColor: Color.fromARGB(255, 207, 206, 206),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: CalculatorScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
+class CalculatorScreen extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _CalculatorScreenState createState() => _CalculatorScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  final myController = TextEditingController();
-  String saludo = 'Hola';
-
-  void _incrementCounter() {
-    _counter++;
-    print('_counter: ${_counter}');
-    setState(() {
-      _counter++;
-    });
-  }
-
-  void btnGreetingOnPressed() {
-/*    setState(() {
-      saludo = 'Hello ' + myController.text;
-    });*/
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    myController.addListener(_printLatestValue);
-  }
-
-  @override
-  void dispose() {
-    myController.dispose();
-    super.dispose();
-  }
-
-  void _printLatestValue() {
-    final text = myController.text;
-    print('Second text field: ${text}');
-  }
-
-  void btnEditTextButtonOnClik() {
-    print('Press');
-  }
+class _CalculatorScreenState extends State<CalculatorScreen> {
+  String input = '';
+  String result = '';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text('Calculator'),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Row(children: <Widget>[
-              SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: myController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      label: const Text('Nombre'),
-                    ),
-                  )),
-              ElevatedButton(
-                  onPressed: btnGreetingOnPressed, child: const Text('Saludar'))
-            ]),
-            Text(saludo),
-            EditTextButton(
-              onClick: btnEditTextButtonOnClik,
-              label: 'Nombres',
-            ),
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              input = '';
+              result = '';
+            });
+          },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                alignment: Alignment.center,
+                color: const Color.fromARGB(255, 255, 255, 255),
+                width: MediaQuery.of(context).size.width * 0.8,
+                child: Text(
+                  result.isEmpty ? input : '$input = $result',
+                  style: const TextStyle(fontSize: 32.0, color: Colors.black),
+                ),
+              ),
+              const SizedBox(height: 10),
+              buildRow(['7', '8', '9', '/'], Colors.white,1),
+              const SizedBox(height: 10),
+              buildRow(['4', '5', '6', '*'], Colors.white,1),
+              const SizedBox(height: 10),
+              buildRow(['1', '2', '3', '-'], Colors.white,1),
+              const SizedBox(height: 10),
+              buildRow(['%', '0', '.', '+'],  Colors.white,1),
+              const SizedBox(height: 10),
+              buildRow(['='], Colors.blue, 4),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
-}
 
-class EditTextButton extends StatelessWidget {
-  const EditTextButton({required this.label, required this.onClick});
-
-  final String label;
-  final Function() onClick;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(children: [
-      SizedBox(
-          width: 200,
-          child: TextField(
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              label: Text(label),
+  Widget buildRow(
+      List<String> buttons, Color buttonColor, int horizontalSpace) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: buttons.map((button) {
+        return GestureDetector(
+          onTap: () {
+            handleButtonPress(button);
+          },
+          child: Container(
+            width: 90.0 * horizontalSpace, // Ajusta el ancho aquí
+            height: 60,
+            decoration: BoxDecoration(
+              color: buttonColor,
+              borderRadius: BorderRadius.circular(10),
             ),
-          )),
-      ElevatedButton(onPressed: onClick, child: Text('OK'))
-    ]);
+            child: Center(
+              child: Text(
+                button,
+                style: TextStyle(fontSize: 25.0, color: Colors.black),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void handleButtonPress(String button) {
+    setState(() {
+      if (button == '=') {
+        result = evaluateExpression();
+      } else {
+        if (!result.isEmpty) {
+          input = button;
+          result = '';
+        } else {
+          bool isLastCharOperator = input.isNotEmpty && isOperator(input.substring(input.length - 1));
+          if (isOperator(button) && isLastCharOperator) {
+            input = input.substring(0, input.length - 1) + button;
+          } else {
+            input += button;
+          }
+        }
+      }
+    });
+  }
+
+  bool isOperator(String character) {
+    return ['+', '-', '*', '/', '%'].contains(character);
+  }
+
+  String evaluateExpression() {
+    List<String> tokens = input.split(RegExp(r'(\+|-|\*|/|%| )'));
+    List<String> operators =
+        input.split(RegExp(r'(\d+|\.)')).where((e) => e.isNotEmpty).toList();
+
+    double resultValue = double.parse(tokens[0]);
+
+    for (int i = 1; i < tokens.length; i++) {
+      double value = double.parse(tokens[i]);
+      String operator = operators[i - 1];
+
+      switch (operator) {
+        case '+':
+          resultValue += value;
+          break;
+        case '-':
+          resultValue -= value;
+          break;
+        case '*':
+          resultValue *= value;
+          break;
+        case '/':
+          resultValue /= value;
+          break;
+        case '%':
+          resultValue %= value;
+          break;
+      }
+    }
+
+    return resultValue.toString();
   }
 }
